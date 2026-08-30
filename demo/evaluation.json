@@ -1,0 +1,10 @@
+{
+  "fixture": "synthetic-en-ru-v1",
+  "required_categories": 7,
+  "detected_required_categories": 7,
+  "deterministic_category_recall": 1.0,
+  "unexpected_categories": [],
+  "raw_values_in_report": [],
+  "output_differs_from_input": true,
+  "network_required": false
+}

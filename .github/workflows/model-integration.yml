@@ -1,0 +1,14 @@
+name: Model integration
+on:
+  workflow_dispatch:
+jobs:
+  optional-model-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[ocr,pii,vision]"
+      - run: python -c "from screenshield.ocr import PaddleOCRBackend; PaddleOCRBackend('en')"
+      - run: python -c "from screenshield.recognizers import PresidioRecognizer; PresidioRecognizer()"
