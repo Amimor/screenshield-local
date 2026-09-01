@@ -48,10 +48,11 @@ def _qr_image(data: str, size: int) -> Image.Image:
                         fill="black",
                     )
         return image
-    qr = qrcode.QRCode(version=2, box_size=6, border=2)
+    qr = qrcode.QRCode(version=2, box_size=8, border=4)
     qr.add_data(data)
     qr.make(fit=True)
-    generated = qr.make_image(fill_color="black", back_color="white").convert("RGB").resize((size, size))
+    generated = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+    generated = generated.resize((size, size), Image.Resampling.NEAREST)
     return cast(Image.Image, generated)
 
 

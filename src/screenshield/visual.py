@@ -52,17 +52,21 @@ class OpenCVVisualDetector:
 
     def detect(self, path: Path) -> list[Detection]:
         cv2 = self.cv2
-        image = cv2.imread(str(path))
+        import numpy as np
+
+        encoded = np.frombuffer(path.read_bytes(), dtype=np.uint8)
+        image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
         if image is None:
             return []
         detections: list[Detection] = []
         qr = cv2.QRCodeDetector()
-        try:
-            ok, _, points, _ = qr.detectAndDecodeMulti(image)
-        except ValueError:  # OpenCV builds differ in return arity
-            ok, points = False, None
+        ok, points = qr.detectMulti(image)
+        if not ok:
+            ok, single = qr.detect(image)
+            points = single if ok and single is not None else None
         if ok and points is not None:
             for polygon in points:
+                polygon = np.asarray(polygon).reshape(-1, 2)
                 xs, ys = polygon[:, 0], polygon[:, 1]
                 box = BoundingBox(x1=int(xs.min()), y1=int(ys.min()), x2=int(xs.max()), y2=int(ys.max()))
                 detections.append(_visual_detection("QR_CODE", box, "opencv-qr", 0.98))

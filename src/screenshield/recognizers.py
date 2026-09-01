@@ -79,7 +79,14 @@ PATTERNS = [
         "RU_PASSPORT",
         re.compile(r"(?<!\d)\d{2}[ \t]\d{2}[ \t]\d{6}(?!\d)"),
         0.86,
+        True,
+    ),
+    PatternSpec(
+        "IP_ADDRESS",
+        re.compile(r"(?<![A-Fa-f0-9:])(?:[A-Fa-f0-9]{0,4}:){2,7}[A-Fa-f0-9]{0,4}(?![A-Fa-f0-9:])"),
+        0.85,
         False,
+        _valid_ip,
     ),
     PatternSpec("IP_ADDRESS", re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), 0.85, False, _valid_ip),
     PatternSpec(
@@ -182,9 +189,15 @@ class PresidioRecognizer:
     def __init__(self) -> None:
         try:
             from presidio_analyzer import AnalyzerEngine
+            from presidio_analyzer.nlp_engine import NlpEngineProvider
         except ImportError as exc:  # pragma: no cover - optional integration
             raise RuntimeError("Install screenshield-local[pii] to enable Presidio") from exc
-        self._analyzer = AnalyzerEngine()
+        configuration = {
+            "nlp_engine_name": "spacy",
+            "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
+        }
+        engine = NlpEngineProvider(nlp_configuration=configuration).create_engine()
+        self._analyzer = AnalyzerEngine(nlp_engine=engine, supported_languages=["en"])
 
     def detect(self, tokens: list[OCRToken], language: str = "en") -> list[Detection]:
         text, offsets = _join_tokens(tokens)

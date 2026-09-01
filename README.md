@@ -7,16 +7,16 @@ workers. It combines OCR, deterministic secret recognizers, optional Presidio,
 QR/face detection and an explicit review step. It never edits the original and
 never writes raw detected values to its report.
 
+The optional NLP layer uses [Microsoft Presidio](https://microsoft.github.io/presidio/),
+and face detection uses the MIT-licensed [OpenCV Zoo YuNet model](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet).
+
 ![ScreenShield demo](docs/demo.gif)
 
 ## See it work
 
 ```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-python -m pip install -e ".[demo]"
-screenshield demo
+uv sync --extra demo
+uv run screenshield demo
 ```
 
 The generated support-console screenshot contains synthetic English/Russian PII,
@@ -29,7 +29,7 @@ QR code. The safe image and report appear in `demo/generated/`.
 
 ## What it finds
 
-- Email, EN/RU phone numbers, IPv4 and Russian passport patterns.
+- Email, EN/RU phone numbers, IPv4/IPv6 and Russian passport patterns.
 - Luhn-valid payment cards.
 - JWT, bearer tokens, private-key headers and database connection URLs.
 - GitHub, AWS and OpenAI-style keys.
@@ -42,19 +42,23 @@ require an explicit decision because context determines whether they are sensiti
 ## Local app
 
 ```bash
-python -m pip install -e ".[app,ocr,pii,vision]"
-streamlit run src/screenshield/app.py
+uv sync --extra app --extra ocr --extra pii --extra vision
+uv run screenshield install-models
+uv run streamlit run src/screenshield/app.py
 ```
 
 The UI displays the original and annotated images side by side. Every detection has
-an independent checkbox and a `solid`, `pixelate` or `blur` action.
+an independent checkbox and a `solid`, `pixelate` or `blur` action. `install-models`
+downloads the pinned YuNet ONNX file, verifies its SHA-256 and stores it outside the
+repository. PaddleOCR downloads its language models on first use.
 
 ## CLI
 
 ```bash
-screenshield scan screenshot.png --lang en
-screenshield sanitize screenshot.png --mode solid
+screenshield scan screenshot.png --lang en --presidio
+screenshield sanitize screenshot.png --policy strict --mode solid
 screenshield batch ./screenshots --output ./safe --lang ru
+screenshield install-models
 screenshield evaluate --output ./demo/evaluation.json
 ```
 
@@ -76,7 +80,9 @@ flowchart LR
 
 ## Privacy properties
 
-- The core contains no HTTP client, analytics or telemetry.
+- Scanning and redaction never call a remote inference API.
+- The committed Streamlit configuration binds the review UI to `127.0.0.1` only.
+- The only built-in network operation is the explicit, hash-verified YuNet model install.
 - The source path and pixels are never overwritten.
 - Output images are re-encoded without EXIF metadata.
 - Reports contain masked previews and SHA-256 digests, not detected values.
@@ -95,13 +101,15 @@ categories, zero unexpected categories and zero raw fixture values in the privac
 report. This measures the deterministic fixture, not open-world OCR or NER quality.
 
 ```bash
-python -m pip install -e ".[dev,demo]"
-pytest
-ruff check .
+uv sync --extra dev --extra demo --extra app
+uv run pytest -m "not integration"
+uv run ruff check .
+uv run mypy src/screenshield
 ```
 
 Ordinary CI uses explicit OCR/visual fixtures and never downloads a model. A separate
-manual workflow smoke-tests PaddleOCR, Presidio and OpenCV.
+manual workflow runs real PaddleOCR, Presidio, QR detection and YuNet face detection
+against synthetic pixels and the MIT-licensed OpenCV Zoo face fixture.
 
 ## Threat model and limitations
 
