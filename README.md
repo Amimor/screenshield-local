@@ -1,3 +1,5 @@
+[English](README.md) | [Русский](README.ru.md)
+
 # ScreenShield Local
 
 > Review and redact secrets, PII, faces and QR codes before sharing a screenshot.
@@ -12,10 +14,41 @@ and face detection uses the MIT-licensed [OpenCV Zoo YuNet model](https://github
 
 ![ScreenShield demo](docs/demo.gif)
 
+## Quick start
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), clone the repository,
+and use the launcher for your operating system. It provisions Python 3.12, creates an
+isolated `.venv`, installs the locked local AI dependencies, verifies the pinned YuNet
+model and starts the UI at `http://127.0.0.1:8501`.
+
+**Windows:** double-click `run.bat`, or run:
+
+```powershell
+.\run.bat
+```
+
+**Windows PowerShell:**
+
+```powershell
+.\run.ps1
+```
+
+**macOS / Linux:**
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+The first setup downloads PaddleOCR, Presidio and OpenCV dependencies plus the small,
+hash-verified YuNet model. Use `-SkipModel` on Windows or `--skip-model` on macOS/Linux
+to launch without the face model. Use `-SetupOnly` or `--setup-only` to prepare the
+environment without starting the server.
+
 ## See it work
 
 ```bash
-uv sync --extra demo
+uv sync --locked --extra demo
 uv run screenshield demo
 ```
 
@@ -41,8 +74,10 @@ require an explicit decision because context determines whether they are sensiti
 
 ## Local app
 
+The launch files above are the recommended route. For a manual start:
+
 ```bash
-uv sync --extra app --extra ocr --extra pii --extra vision
+uv sync --locked --extra app --extra ocr --extra pii --extra vision
 uv run screenshield install-models
 uv run streamlit run src/screenshield/app.py
 ```
@@ -55,11 +90,11 @@ repository. PaddleOCR downloads its language models on first use.
 ## CLI
 
 ```bash
-screenshield scan screenshot.png --lang en --presidio
-screenshield sanitize screenshot.png --policy strict --mode solid
-screenshield batch ./screenshots --output ./safe --lang ru
-screenshield install-models
-screenshield evaluate --output ./demo/evaluation.json
+uv run screenshield scan screenshot.png --lang en --presidio
+uv run screenshield sanitize screenshot.png --policy strict --mode solid
+uv run screenshield batch ./screenshots --output ./safe --lang ru
+uv run screenshield install-models
+uv run screenshield evaluate --output ./demo/evaluation.json
 ```
 
 ## Architecture
@@ -101,7 +136,7 @@ categories, zero unexpected categories and zero raw fixture values in the privac
 report. This measures the deterministic fixture, not open-world OCR or NER quality.
 
 ```bash
-uv sync --extra dev --extra demo --extra app
+uv sync --locked --extra dev --extra demo --extra app
 uv run pytest -m "not integration"
 uv run ruff check .
 uv run mypy src/screenshield
