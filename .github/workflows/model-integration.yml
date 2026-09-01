@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
+      UV_PYTHON: "3.11"
       RUN_MODEL_INTEGRATION: "1"
       PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: "True"
       DO_NOT_TRACK: "1"
